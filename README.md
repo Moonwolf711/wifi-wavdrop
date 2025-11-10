@@ -4,6 +4,11 @@ Professional DJ workflow app for iOS with AirDrop integration and external USB d
 
 ## Features
 
+- **Wi-Fi Transfer**: Wireless file transfer using Bonjour service discovery
+  - Built-in HTTP server for browser uploads
+  - Device-to-device direct transfer
+  - Real-time progress tracking
+  - QR code sharing for easy connection
 - **AirDrop Integration**: Receive files via AirDrop and automatically save to external USB drives
 - **External Drive Management**: Detect, monitor, and manage USB drives connected via Lightning/USB-C
 - **DJ-Specific Features**:
@@ -31,9 +36,11 @@ WaveDrop/
 │   │   ├── ExternalDriveManager.swift
 │   │   ├── AudioMetadataExtractor.swift
 │   │   ├── DJExportManager.swift
+│   │   ├── WiFiTransferManager.swift
 │   │   └── Views/
 │   │       ├── MainView.swift
-│   │       └── FileBrowserView.swift
+│   │       ├── FileBrowserView.swift
+│   │       └── WiFiTransferView.swift
 │   └── WaveDropShareExtension/  # Share Extension
 │       ├── ShareViewController.swift
 │       └── ShareExtensionView.swift
@@ -269,16 +276,101 @@ Exports track metadata to DJ software formats:
 - No data is transmitted to external servers
 - User consent required for microphone and photo library access
 - External drive access follows iOS security policies
+- Wi-Fi transfer uses local network only (no internet required)
+- Bonjour service discovery for secure device pairing
+
+## Wi-Fi Transfer
+
+### Features
+
+- **Wireless File Transfer**: Transfer files between devices without cables
+- **Bonjour Discovery**: Automatically discover WaveDrop devices on your network
+- **Browser Upload**: Upload files from any browser on your network
+- **Device-to-Device**: Direct transfer between WaveDrop installations
+- **Real-time Progress**: Track upload/download progress
+- **QR Code Sharing**: Share connection URL via QR code
+
+### Usage
+
+#### Start the Server
+
+1. Open WaveDrop
+2. Tap the "Wi-Fi Transfer" tab
+3. Tap "Start Server"
+4. Note the displayed URL (e.g., `http://192.168.1.100:8080`)
+
+#### Upload from Browser
+
+1. On any device connected to the same Wi-Fi network
+2. Open a web browser
+3. Navigate to the server URL
+4. Drag and drop files or click "Choose Files"
+5. Files are automatically uploaded and saved
+
+#### Transfer Between Devices
+
+1. Both devices must have WaveDrop installed
+2. Both devices on same Wi-Fi network
+3. Start server on receiving device
+4. On sending device, tap "Wi-Fi Transfer"
+5. Select discovered device
+6. Choose files to transfer
+
+#### QR Code Sharing
+
+1. Start the server
+2. Tap the menu (⋯) → "Show QR Code"
+3. Share the QR code with others
+4. They can scan it to get the connection URL
+
+### Technical Details
+
+- **Protocol**: HTTP/1.1 with multipart/form-data
+- **Service Type**: `_wavedrop._tcp`
+- **Default Port**: 8080 (configurable)
+- **Discovery**: Bonjour/mDNS
+- **Supported Files**: All audio formats (MP3, WAV, FLAC, AIFF, M4A, etc.)
+
+### Security Considerations
+
+- Server only accepts connections from local network
+- No authentication by default (local network trusted)
+- All transfers happen over local Wi-Fi (no internet)
+- Server stops automatically when app closes
+- Files are saved to app sandbox (iOS security)
+
+### Troubleshooting
+
+**Devices not discovered:**
+- Ensure both devices are on the same Wi-Fi network
+- Check that firewall/router allows mDNS (port 5353)
+- Try restarting the server
+- Verify Wi-Fi has local network access enabled
+
+**Upload fails:**
+- Check available storage space
+- Ensure file format is supported
+- Try smaller files first
+- Check network stability
+
+**Server won't start:**
+- Verify port 8080 is not in use
+- Grant local network permissions in Settings
+- Restart the app
+- Try a different port
 
 ## Roadmap
 
+- [x] Wi-Fi file transfer support ✅
 - [ ] Cloud sync integration (iCloud, Dropbox)
 - [ ] Advanced waveform analysis (beat detection, phrases)
 - [ ] Auto-BPM grid alignment
 - [ ] Playlist management
-- [ ] Wi-Fi file transfer support
 - [ ] Integration with streaming services
 - [ ] Advanced mixing features (EQ, effects)
+- [ ] WebSocket support for real-time updates
+- [ ] Authentication/encryption for Wi-Fi transfer
+- [ ] Peer-to-peer transfer (WiFi Direct)
 
 ## License
 

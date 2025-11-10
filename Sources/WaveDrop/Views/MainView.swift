@@ -4,6 +4,7 @@ import SwiftUI
 public struct MainView: View {
     @StateObject private var driveManager = ExternalDriveManager()
     @State private var selectedDrive: ExternalDrive?
+    @State private var selectedTab = 0
     @State private var showingFileBrowser = false
     @State private var showingSettings = false
     @State private var isProcessing = false
@@ -12,6 +13,22 @@ public struct MainView: View {
     public init() {}
 
     public var body: some View {
+        TabView(selection: $selectedTab) {
+            usbDriveView
+                .tabItem {
+                    Label("USB Drive", systemImage: "externaldrive.fill")
+                }
+                .tag(0)
+
+            WiFiTransferView()
+                .tabItem {
+                    Label("Wi-Fi Transfer", systemImage: "wifi")
+                }
+                .tag(1)
+        }
+    }
+
+    private var usbDriveView: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 headerView
@@ -27,7 +44,7 @@ public struct MainView: View {
                 statusView
             }
             .padding()
-            .navigationTitle("WaveDrop")
+            .navigationTitle("USB Drive")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {

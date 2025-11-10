@@ -58,6 +58,15 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>WaveDrop needs access to save audio files to your photo library.</string>
 
+	<!-- Network Permissions -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>WaveDrop uses your local network to discover and connect to other WaveDrop devices for wireless file transfer.</string>
+
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_wavedrop._tcp</string>
+	</array>
+
 	<!-- File Access -->
 	<key>UIFileSharingEnabled</key>
 	<true/>
