@@ -25,6 +25,12 @@ public struct MainView: View {
                     Label("Wi-Fi Transfer", systemImage: "wifi")
                 }
                 .tag(1)
+
+            WirelessUSBView()
+                .tabItem {
+                    Label("Wireless USB", systemImage: "antenna.radiowaves.left.and.right")
+                }
+                .tag(2)
         }
     }
 
