@@ -50,7 +50,10 @@ public class WiFiTransferManager: NSObject, ObservableObject {
             let service = NWListener.Service(name: serviceName, type: serviceType)
             parameters.includePeerToPeer = true
 
-            listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: port)!)
+            guard let portEndpoint = NWEndpoint.Port(rawValue: port) else {
+                throw WiFiTransferError.serverStartFailed("Invalid port number: \(port)")
+            }
+            listener = try NWListener(using: parameters, on: portEndpoint)
 
             listener?.service = service
             listener?.stateUpdateHandler = { [weak self] state in
@@ -391,10 +394,24 @@ public class WiFiTransferManager: NSObject, ObservableObject {
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        let fileData = try Data(contentsOf: fileURL)
-        let httpBody = createMultipartBody(fileData: fileData, fileName: fileURL.lastPathComponent, boundary: boundary)
+        // Get file size without loading into memory
+        let fileAttributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        guard let fileSize = fileAttributes[.size] as? Int64 else {
+            throw WiFiTransferError.uploadFailed("Cannot determine file size")
+        }
 
-        let (_, response) = try await URLSession.shared.upload(for: request, from: httpBody)
+        // Stream file upload instead of loading entire file into memory
+        let session = URLSession.shared
+
+        // Create a temporary file with multipart body
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try createMultipartFile(sourceURL: fileURL, destinationURL: tempURL, fileName: fileURL.lastPathComponent, boundary: boundary)
+
+        defer {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+
+        let (_, response) = try await session.upload(for: request, fromFile: tempURL)
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
@@ -404,16 +421,47 @@ public class WiFiTransferManager: NSObject, ObservableObject {
         return true
     }
 
-    private func createMultipartBody(fileData: Data, fileName: String, boundary: String) -> Data {
-        var body = Data()
+    private func createMultipartFile(sourceURL: URL, destinationURL: URL, fileName: String, boundary: String) throws {
+        // Create output stream for writing multipart data
+        guard let outputStream = OutputStream(url: destinationURL, append: false) else {
+            throw WiFiTransferError.uploadFailed("Cannot create output stream")
+        }
 
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/mpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(fileData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        outputStream.open()
+        defer { outputStream.close() }
 
-        return body
+        // Write multipart headers
+        let headerString = "--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: audio/mpeg\r\n\r\n"
+        if let headerData = headerString.data(using: .utf8) {
+            _ = headerData.withUnsafeBytes { outputStream.write($0.bindMemory(to: UInt8.self).baseAddress!, maxLength: headerData.count) }
+        }
+
+        // Stream file content in chunks (1MB at a time)
+        guard let inputStream = InputStream(url: sourceURL) else {
+            throw WiFiTransferError.uploadFailed("Cannot open input file")
+        }
+
+        inputStream.open()
+        defer { inputStream.close() }
+
+        let bufferSize = 1024 * 1024 // 1MB chunks
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        while inputStream.hasBytesAvailable {
+            let bytesRead = inputStream.read(buffer, maxLength: bufferSize)
+            if bytesRead > 0 {
+                _ = outputStream.write(buffer, maxLength: bytesRead)
+            } else if bytesRead < 0 {
+                throw WiFiTransferError.uploadFailed("Error reading file: \(inputStream.streamError?.localizedDescription ?? "unknown")")
+            }
+        }
+
+        // Write multipart footer
+        let footerString = "\r\n--\(boundary)--\r\n"
+        if let footerData = footerString.data(using: .utf8) {
+            _ = footerData.withUnsafeBytes { outputStream.write($0.bindMemory(to: UInt8.self).baseAddress!, maxLength: footerData.count) }
+        }
     }
 
     private func getLocalIPAddress() -> String? {
@@ -427,14 +475,16 @@ public class WiFiTransferManager: NSObject, ObservableObject {
         while ptr != nil {
             defer { ptr = ptr?.pointee.ifa_next }
 
-            guard let interface = ptr?.pointee else { continue }
-            let addrFamily = interface.ifa_addr.pointee.sa_family
+            guard let interface = ptr?.pointee,
+                  let addr = interface.ifa_addr else { continue }
+
+            let addrFamily = addr.pointee.sa_family
 
             if addrFamily == UInt8(AF_INET) {
                 let name = String(cString: interface.ifa_name)
                 if name == "en0" || name == "en1" { // WiFi or Ethernet
                     var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                    getnameinfo(addr, socklen_t(addr.pointee.sa_len),
                                &hostname, socklen_t(hostname.count),
                                nil, socklen_t(0), NI_NUMERICHOST)
                     address = String(cString: hostname)

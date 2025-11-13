@@ -1,0 +1,19 @@
+# Git Remote Configuration
+# This file contains Git repository metadata for the WaveDrop project
+
+REMOTE_URL=https://github.com/Moonwolf711/wavedrop.git
+DEFAULT_BRANCH=develop
+
+# Additional Git Information
+MAIN_BRANCH=main
+REPOSITORY_NAME=wavedrop
+REPOSITORY_OWNER=Moonwolf711
+
+# Status
+REMOTE_CONFIGURED=true
+REMOTE_PUSHED=false
+
+# Notes
+# - Remote configured but not yet pushed (authentication pending)
+# - Run 'gh auth login' or configure SSH to enable push
+# - After authentication: git push -u origin develop && git push origin main

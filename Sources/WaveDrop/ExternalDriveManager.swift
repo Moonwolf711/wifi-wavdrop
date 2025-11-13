@@ -127,21 +127,87 @@ public class ExternalDriveManager: ObservableObject {
         )
 
         // Check available space
-        if let fileSize = try? fileManager.attributesOfItem(atPath: source.path)[.size] as? Int64,
-           fileSize > drive.availableCapacity {
+        guard let attributes = try? fileManager.attributesOfItem(atPath: source.path),
+              let fileSize = attributes[.size] as? Int64 else {
+            throw DriveError.copyFailed("Cannot determine file size")
+        }
+
+        if fileSize > drive.availableCapacity {
             throw DriveError.insufficientSpace
         }
 
-        // Copy file with progress tracking
+        // Copy file with progress tracking using streaming
         return try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    try self.fileManager.copyItem(at: source, to: destination)
+                    try self.copyFileWithProgress(from: source, to: destination, totalSize: fileSize, progress: progress)
                     continuation.resume(returning: destination)
                 } catch {
                     continuation.resume(throwing: DriveError.copyFailed(error.localizedDescription))
                 }
             }
+        }
+    }
+
+    /// Helper method to copy file with progress tracking
+    private func copyFileWithProgress(from source: URL, to destination: URL, totalSize: Int64, progress: @escaping (Double) -> Void) throws {
+        // Report initial progress
+        Task { @MainActor in
+            progress(0.0)
+        }
+
+        // Open input stream
+        guard let inputStream = InputStream(url: source) else {
+            throw DriveError.copyFailed("Cannot open source file")
+        }
+
+        // Open output stream
+        guard let outputStream = OutputStream(url: destination, append: false) else {
+            throw DriveError.copyFailed("Cannot create destination file")
+        }
+
+        inputStream.open()
+        outputStream.open()
+
+        defer {
+            inputStream.close()
+            outputStream.close()
+        }
+
+        let bufferSize = 1024 * 1024 // 1MB chunks
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+
+        var totalBytesWritten: Int64 = 0
+
+        while inputStream.hasBytesAvailable {
+            let bytesRead = inputStream.read(buffer, maxLength: bufferSize)
+
+            if bytesRead > 0 {
+                var bytesWrittenInChunk = 0
+                while bytesWrittenInChunk < bytesRead {
+                    let bytesWritten = outputStream.write(buffer.advanced(by: bytesWrittenInChunk), maxLength: bytesRead - bytesWrittenInChunk)
+                    if bytesWritten <= 0 {
+                        throw DriveError.copyFailed("Write error: \(outputStream.streamError?.localizedDescription ?? "unknown")")
+                    }
+                    bytesWrittenInChunk += bytesWritten
+                }
+
+                totalBytesWritten += Int64(bytesRead)
+
+                // Report progress
+                let currentProgress = Double(totalBytesWritten) / Double(totalSize)
+                Task { @MainActor in
+                    progress(min(currentProgress, 1.0))
+                }
+            } else if bytesRead < 0 {
+                throw DriveError.copyFailed("Read error: \(inputStream.streamError?.localizedDescription ?? "unknown")")
+            }
+        }
+
+        // Ensure final progress is reported as 100%
+        Task { @MainActor in
+            progress(1.0)
         }
     }
 
