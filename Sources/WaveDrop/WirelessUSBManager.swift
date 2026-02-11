@@ -122,14 +122,15 @@ class WirelessUSBManager: ObservableObject {
         browser = NWBrowser(for: .bonjour(type: serviceType, domain: nil), using: parameters)
 
         browser?.stateUpdateHandler = { [weak self] newState in
+            guard let strongSelf = self else { return }
             Task { @MainActor in
                 switch newState {
                 case .ready:
-                    print("🔍 Wireless USB discovery started")
+                    print("Wireless USB discovery started")
                 case .failed(let error):
-                    print("❌ Discovery failed: \\(error)")
-                    self?.lastError = "Discovery failed: \\(error.localizedDescription)"
-                    self?.isDiscovering = false
+                    print("Discovery failed: \(error)")
+                    strongSelf.lastError = "Discovery failed: \(error.localizedDescription)"
+                    strongSelf.isDiscovering = false
                 default:
                     break
                 }
@@ -137,8 +138,9 @@ class WirelessUSBManager: ObservableObject {
         }
 
         browser?.browseResultsChangedHandler = { [weak self] results, changes in
+            guard let strongSelf = self else { return }
             Task { @MainActor in
-                self?.handleBrowseResults(results: results, changes: changes)
+                strongSelf.handleBrowseResults(results: results, changes: changes)
             }
         }
 

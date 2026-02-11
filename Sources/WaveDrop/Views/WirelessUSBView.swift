@@ -181,7 +181,7 @@ struct FileBrowserSection: View {
             // Path breadcrumb
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    ForEach(pathComponents, id: \\.self) { component in
+                    ForEach(Array(pathComponents.enumerated()), id: \.offset) { _, component in
                         Button(action: { navigateToPath(component) }) {
                             Text(component == "/" ? "Root" : component)
                                 .font(.caption)
@@ -402,7 +402,7 @@ struct TransferListView: View {
                 .padding(.horizontal)
 
             ForEach(transfers) { transfer in
-                TransferRow(transfer: transfer)
+                USBTransferRow(transfer: transfer)
             }
         }
         .padding(.vertical)
@@ -410,7 +410,7 @@ struct TransferListView: View {
     }
 }
 
-struct TransferRow: View {
+struct USBTransferRow: View {
     let transfer: USBFileTransfer
 
     var body: some View {
