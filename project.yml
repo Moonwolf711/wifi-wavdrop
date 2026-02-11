@@ -1,0 +1,72 @@
+name: WaveDrop
+options:
+  bundleIdPrefix: com.moonwolf711
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+
+packages:
+  AudioKit:
+    url: https://github.com/AudioKit/AudioKit
+    from: "5.6.0"
+  ID3TagEditor:
+    url: https://github.com/chicio/ID3TagEditor
+    from: "4.0.0"
+  Alamofire:
+    url: https://github.com/Alamofire/Alamofire
+    from: "5.8.0"
+  swift-collections:
+    url: https://github.com/apple/swift-collections
+    from: "1.0.0"
+
+targets:
+  WaveDrop:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/WaveDrop
+    dependencies:
+      - package: AudioKit
+      - package: ID3TagEditor
+      - package: Alamofire
+      - package: swift-collections
+        product: Collections
+    settings:
+      base:
+        INFOPLIST_FILE: Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.moonwolf711.wavedrop
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Info.plist
+
+  WaveDropTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests/WaveDropTests
+    dependencies:
+      - target: WaveDrop
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moonwolf711.wavedrop.tests
+
+schemes:
+  WaveDrop:
+    build:
+      targets:
+        WaveDrop: all
+    test:
+      targets:
+        - WaveDropTests
+    run:
+      config: Debug
+    archive:
+      config: Release
