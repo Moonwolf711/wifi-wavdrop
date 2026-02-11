@@ -32,8 +32,12 @@ public class WiFiTransferManager: NSObject, ObservableObject {
     }
 
     deinit {
-        stopServer()
-        stopDiscovery()
+        listener?.cancel()
+        listener = nil
+        connections.forEach { $0.cancel() }
+        connections.removeAll()
+        browser?.cancel()
+        browser = nil
     }
 
     // MARK: - Server Management

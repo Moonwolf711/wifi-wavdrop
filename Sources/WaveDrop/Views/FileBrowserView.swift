@@ -184,7 +184,7 @@ public struct FileBrowserView: View {
 
     private func refreshFiles() {
         isLoading = true
-        Task {
+        Task { @MainActor in
             do {
                 let urls = try driveManager.contentsOfDirectory(at: currentDirectory)
                 let items = urls.map { FileItem(url: $0) }.sorted { file1, file2 in
@@ -194,16 +194,11 @@ public struct FileBrowserView: View {
                     }
                     return file1.name < file2.name
                 }
-
-                await MainActor.run {
-                    files = items
-                    isLoading = false
-                }
+                files = items
+                isLoading = false
             } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    isLoading = false
-                }
+                errorMessage = error.localizedDescription
+                isLoading = false
             }
         }
     }
@@ -452,12 +447,12 @@ struct FileItem: Identifiable {
 
 // MARK: - Preview
 
-#Preview {
-    if let url = URL(string: "/Volumes/USB") {
+struct FileBrowserView_Previews: PreviewProvider {
+    static var previews: some View {
         let drive = ExternalDrive(
             id: "1",
             name: "USB Drive",
-            url: url,
+            url: URL(fileURLWithPath: "/Volumes/USB"),
             totalCapacity: 32_000_000_000,
             availableCapacity: 16_000_000_000,
             isEjectable: true
