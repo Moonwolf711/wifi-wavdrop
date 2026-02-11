@@ -24,7 +24,8 @@ public class ExternalDriveManager: ObservableObject {
     }
 
     deinit {
-        stopMonitoring()
+        monitoringTimer?.invalidate()
+        monitoringTimer = nil
     }
 
     // MARK: - Public Methods
@@ -150,7 +151,7 @@ public class ExternalDriveManager: ObservableObject {
     }
 
     /// Helper method to copy file with progress tracking
-    private func copyFileWithProgress(from source: URL, to destination: URL, totalSize: Int64, progress: @escaping (Double) -> Void) throws {
+    nonisolated private func copyFileWithProgress(from source: URL, to destination: URL, totalSize: Int64, progress: @escaping (Double) -> Void) throws {
         // Report initial progress
         Task { @MainActor in
             progress(0.0)

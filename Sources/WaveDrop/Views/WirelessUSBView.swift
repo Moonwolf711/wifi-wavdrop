@@ -205,7 +205,7 @@ struct FileBrowserSection: View {
             // File list
             List {
                 ForEach(usbManager.currentFiles) { file in
-                    FileRow(
+                    USBFileRow(
                         file: file,
                         isSelected: selectedFiles.contains(file.id)
                     )
@@ -312,7 +312,7 @@ struct FileBrowserSection: View {
 
 // MARK: - File Row
 
-struct FileRow: View {
+struct USBFileRow: View {
     let file: USBFile
     let isSelected: Bool
 
