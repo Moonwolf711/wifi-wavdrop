@@ -41,16 +41,16 @@ jobs:
             -project WaveDrop.xcodeproj \
             -scheme WaveDrop
 
-      - name: Build for iOS device (unsigned)
+      - name: Build for iOS device (ad-hoc signed)
         run: |
           xcodebuild build \
             -project WaveDrop.xcodeproj \
             -scheme WaveDrop \
             -destination 'generic/platform=iOS' \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             -derivedDataPath build/DerivedData
