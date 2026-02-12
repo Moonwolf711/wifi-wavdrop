@@ -41,21 +41,21 @@ jobs:
             -project WaveDrop.xcodeproj \
             -scheme WaveDrop
 
-      - name: Build for iOS device (ad-hoc signed)
+      - name: Build for iOS device (unsigned)
         run: |
           xcodebuild build \
             -project WaveDrop.xcodeproj \
             -scheme WaveDrop \
             -destination 'generic/platform=iOS' \
             -configuration Release \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             -derivedDataPath build/DerivedData
 
-      - name: Package as IPA
+      - name: Ad-hoc sign and package as IPA
         run: |
           APP_PATH=$(find build/DerivedData -name "WaveDrop.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
@@ -64,6 +64,11 @@ jobs:
             exit 1
           fi
           echo "Found app at: $APP_PATH"
+
+          # Ad-hoc sign to create proper LC_CODE_SIGNATURE segment
+          /usr/bin/codesign --force --sign - --timestamp=none "$APP_PATH/WaveDrop"
+          /usr/bin/codesign --force --sign - --timestamp=none "$APP_PATH"
+          echo "Ad-hoc signed successfully"
 
           mkdir -p build/Payload
           cp -r "$APP_PATH" build/Payload/
