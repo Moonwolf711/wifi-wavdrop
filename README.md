@@ -1,31 +1,18 @@
-# WaveDrop iOS App
+# wifi-wavdrop (ARCHIVED)
 
-Professional DJ workflow app for iOS with AirDrop integration and external USB drive support.
+**This repo has been merged into the main WavDrop app.**
 
-## Features
+All code from this repo now lives in [wavdrop](https://github.com/Moonwolf711/wavdrop):
 
-- **Wi-Fi Transfer**: Wireless file transfer using Bonjour service discovery
-  - Built-in HTTP server for browser uploads
-  - Device-to-device direct transfer
-  - Real-time progress tracking
-  - QR code sharing for easy connection
-- **AirDrop Integration**: Receive files via AirDrop and automatically save to external USB drives
-- **External Drive Management**: Detect, monitor, and manage USB drives connected via Lightning/USB-C
-- **DJ-Specific Features**:
-  - BPM detection with high accuracy
-  - Musical key detection (Camelot Wheel notation)
-  - Waveform visualization with beat grid
-  - Cue point management
-  - Export to Rekordbox, Serato, Traktor, Virtual DJ, and Engine Prime
-- **File Transfer**: Robust file transfer with progress tracking and error recovery
-- **Share Extension**: Seamless integration with iOS share sheet
+- **Wi-Fi Transfer** → `ios/App/App/WiFiTransferPlugin.swift` (Capacitor plugin) + `src/pages/WiFiTransfer.jsx` + `src/lib/wifi-transfer.js`
+- **Share Extension** → `ios/App/WaveDropShareExtension/ShareViewController.swift`
+- **Audio Metadata / DJ Export / Drive Manager** → Already covered by wavdrop's web-based implementations
 
-## Requirements
+**Do not use this repo for new work. Use [wavdrop](https://github.com/Moonwolf711/wavdrop) instead.**
 
-- iOS 16.0+
-- Xcode 15.0+
-- Swift 5.9+
-- External USB drive (via Lightning-to-USB or USB-C adapter)
+---
+
+## Original README (for reference)
 
 ## Project Structure
 
